@@ -1,0 +1,15 @@
+langchain_community
+langchain_postgres
+langchain_core
+langchain_ollama
+langchain_text_splitters
+pydantic 
+sqlalchemy 
+python-dotenv
+fastapi 
+uvicorn
+psycopg2-binary
+pytest 
+httpx
+langchain_anthropic
+langchain_openai
