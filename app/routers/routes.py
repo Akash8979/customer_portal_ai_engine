@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.services import llm
+from app.connection import get_connection
 from langchain_core.prompts import ChatPromptTemplate
 
 
@@ -86,3 +87,26 @@ async def classify_ticket(ticket: TicketClassifyRequest):
     # )
     # content = result.content or {}    
     # return {"message": "File uploaded", "filename": "file_location"}
+
+
+
+@router.post("/table_create", status_code=200)
+async def table_create():
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS llm_retry_queue (
+                    id          SERIAL PRIMARY KEY,
+                    ticket_id   INTEGER NOT NULL,
+                    title       TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    status      TEXT NOT NULL DEFAULT 'pending',
+                    retry_count INTEGER NOT NULL DEFAULT 0,
+                    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+        conn.commit()
+        return {"message": "Table created successfully"}
+    finally:
+        conn.close()
