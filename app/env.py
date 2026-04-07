@@ -1,9 +1,15 @@
-CONNECTION_STRING = "postgresql+psycopg2://akash.kumar:India%40123@localhost:5432/doc_summary_qa"
-DNS_TYPE_CONNECTION_STRING =  "postgresql://akash.kumar:India%40123@localhost:5432/doc_summary_qa"
-MODEL = "qwen/qwen3.6-plus:free"
-EMBEDDING_MODEL =  "bge-m3"
-COLLECTION_NAME = "langchain_pg_embedding"
-API_KEY = "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"
-TEMPERATURE = 0
-MAX_TOKENS = 1024
-MODEL_URL = "https://openrouter.ai/api/v1"
+import os
+
+CONNECTION_STRING = os.getenv('CONNECTION_STRING')
+DNS_TYPE_CONNECTION_STRING = os.getenv('DNS_TYPE_CONNECTION_STRING')
+MODEL =  os.getenv('MODEL')
+EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL')
+COLLECTION_NAME = os.getenv('COLLECTION_NAME')
+API_KEY = os.getenv('API_KEY')
+TEMPERATURE = os.getenv('TEMPERATURE')
+MAX_TOKENS =  os.getenv('MAX_TOKENS')
+MODEL_URL =  os.getenv('MODEL_URL')
+TICKET_UPDATE_URL = os.getenv('TICKET_UPDATE_URL')
+AUTH_URL =   os.getenv('AUTH_URL')
+AUTH_EMAIL_ID =  os.getenv('AUTH_EMAIL_ID')
+AUTH_PASSWORD = os.getenv('AUTH_PASSWORD')

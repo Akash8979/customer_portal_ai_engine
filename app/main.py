@@ -2,7 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.routers import routes
-from app.services.cassify import scheduled_task
+from app.scheduler import scheduled_task
 
 
 @asynccontextmanager
