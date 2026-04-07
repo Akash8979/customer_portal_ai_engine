@@ -1,6 +1,5 @@
 import logging
 from app.services import llm
-from app.queue import enqueue
 from langchain_core.prompts import ChatPromptTemplate
 
 logger = logging.getLogger(__name__)
@@ -36,6 +35,5 @@ class Classify:
             }
         except Exception as e:
             logger.error(f"LLM failed for ticket {ticket.id}: {e}. Scheduling retry.")
-            enqueue(ticket)
             return None
         

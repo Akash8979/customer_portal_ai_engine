@@ -21,9 +21,9 @@ Description: {description}
 """)
 
 class TicketClassifyRequest(BaseModel):
-    id:int
-    title:str
-    description:str
+  id:int
+  title:str
+  description:str
     
 
 router = APIRouter(

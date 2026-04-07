@@ -14,15 +14,16 @@ async def fetch_access_token(client: httpx.AsyncClient) -> str:
         json={"email": env.AUTH_EMAIL_ID, "password": env.AUTH_PASSWORD},
     )
     response.raise_for_status()
-    return response.json()["access_token"]
+    return response.json()['tokens']["access"]
 
 
 async def notify_update(ticket_id: int, category: str):
     async with httpx.AsyncClient() as client:
         token = await fetch_access_token(client)
-        url = f"{env.TICKET_UPDATE_URL}/tickets/{ticket_id}/update"
+        logger.info(f"Logins {ticket_id}: {category}")
+        url = f"{env.TICKET_UPDATE_URL}/portal/tickets/{ticket_id}/update?tenant_id=1"
         headers = {"Authorization": f"Bearer {token}"}
-        response = await client.patch(url, json={"category": category}, headers=headers)
+        response = await client.patch(url, json={"category": category.upper()}, headers=headers)
         response.raise_for_status()
         logger.info(f"Successfully notified update service for ticket {ticket_id}: {category}")
 
@@ -30,7 +31,6 @@ async def notify_update(ticket_id: int, category: str):
 async def scheduled_task():
     while True:
         await asyncio.sleep(20)
-
         pending = dequeue_pending()
         if not pending:
             continue
@@ -44,6 +44,7 @@ async def scheduled_task():
             logger.info(f"Retrying LLM for ticket {ticket.id}")
             try:
                 result = Classify.run(ticket)
+                logger.info(f"{result}")
                 if result is not None:
                     mark_done(row["queue_id"])
                     logger.info(f"Retry succeeded for ticket {ticket.id}: {result}")
