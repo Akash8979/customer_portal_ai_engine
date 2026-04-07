@@ -1,5 +1,5 @@
-CONNECTION_STRING = "postgresql+psycopg2://akash.kumar:India%40123@localhost:5432/doc_summary_qa"
-DNS_TYPE_CONNECTION_STRING =  "postgresql://akash.kumar:India%40123@localhost:5432/doc_summary_qa"
+CONNECTION_STRING = "postgresql+psycopg2://akash.kumar:India%40123@localhost:5432/customer_portal"
+DNS_TYPE_CONNECTION_STRING =  "postgresql://akash.kumar:India%40123@localhost:5432/customer_portal"
 MODEL = "qwen/qwen3.6-plus:free"
 EMBEDDING_MODEL =  "bge-m3"
 COLLECTION_NAME = "langchain_pg_embedding"
@@ -7,3 +7,7 @@ API_KEY = "sk-or-v1-d376d908e81b2536ff43625d2ce853a8bd217673f87efd39db4ab62bc4a8
 TEMPERATURE = 0
 MAX_TOKENS = 1024
 MODEL_URL = "https://openrouter.ai/api/v1"
+TICKET_UPDATE_URL = "http://localhost:8080"
+AUTH_URL = "http://localhost:8080"
+AUTH_EMAIL_ID = "internal_agent_test_1@gmail.com"
+AUTH_PASSWORD = "test"

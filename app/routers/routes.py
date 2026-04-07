@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from app.services import llm
 from app.connection import get_connection
 from langchain_core.prompts import ChatPromptTemplate
-
+import logging
+logger = logging.getLogger(__name__)
 
 # Prompt template
 prompt = ChatPromptTemplate.from_template("""
@@ -59,7 +59,20 @@ async def classify_ticket(ticket: TicketClassifyRequest):
     # org_id      = ticket["tenant_id"]
     # categories  = ticket.get("categories") or []
 
-
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO llm_retry_queue (ticket_id, title, description, status, retry_count)
+                VALUES (%s, %s, %s, 'pending', 0)
+                """,
+                (ticket.id, ticket.title, ticket.description),
+            )
+        conn.commit()
+        logger.info(f"Ticket {ticket.id} added to retry queue.")
+    finally:
+        conn.close()
 
     return {
         "message": "successfull"
@@ -90,7 +103,7 @@ async def classify_ticket(ticket: TicketClassifyRequest):
 
 
 
-@router.post("/table_create", status_code=200)
+@router.get("/table_create", status_code=200)
 async def table_create():
     conn = get_connection()
     try:

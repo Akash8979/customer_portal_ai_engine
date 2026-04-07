@@ -4,24 +4,6 @@ from app.connection import get_connection
 logger = logging.getLogger(__name__)
 
 
-def enqueue(ticket) -> None:
-    """Push a failed ticket into the DB retry queue."""
-    conn = get_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO llm_retry_queue (ticket_id, title, description, status, retry_count)
-                VALUES (%s, %s, %s, 'pending', 0)
-                """,
-                (ticket.id, ticket.title, ticket.description),
-            )
-        conn.commit()
-        logger.info(f"Ticket {ticket.id} added to retry queue.")
-    finally:
-        conn.close()
-
-
 def dequeue_pending() -> list[dict]:
     """Fetch and lock all pending rows, mark them as processing."""
     conn = get_connection()
