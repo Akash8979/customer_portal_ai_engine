@@ -1,25 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.connection import get_connection
-from langchain_core.prompts import ChatPromptTemplate
 import logging
 logger = logging.getLogger(__name__)
-
-# Prompt template
-prompt = ChatPromptTemplate.from_template("""
-You are a support ticket classifier.
-x   
-Classify the ticket into one of:
-- bug
-- feature
-- billing
-
-Only return the category.
-
-Title: {title}
-Description: {description}
-""")
-
 class TicketClassifyRequest(BaseModel):
   id:int
   title:str
@@ -64,8 +47,8 @@ async def classify_ticket(ticket: TicketClassifyRequest):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO llm_retry_queue (ticket_id, title, description, status, retry_count)
-                VALUES (%s, %s, %s, 'pending', 0)
+                INSERT INTO llm_retry_queue (ticket_id, title, description, status, retry_count, job_type)
+                VALUES (%s, %s, %s, 'pending', 0, 'classify'),(%s, %s, %s, 'pending', 0, 'priority')
                 """,
                 (ticket.id, ticket.title, ticket.description),
             )
@@ -102,7 +85,6 @@ async def classify_ticket(ticket: TicketClassifyRequest):
     # return {"message": "File uploaded", "filename": "file_location"}
 
 
-
 @router.get("/table_create", status_code=200)
 async def table_create():
     conn = get_connection()
@@ -116,6 +98,7 @@ async def table_create():
                     description TEXT NOT NULL,
                     status      TEXT NOT NULL DEFAULT 'pending',
                     retry_count INTEGER NOT NULL DEFAULT 0,
+                    job_type    TEXT DEFAULT NULL,
                     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
