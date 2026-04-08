@@ -1,25 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.connection import get_connection
-from langchain_core.prompts import ChatPromptTemplate
 import logging
 logger = logging.getLogger(__name__)
-
-# Prompt template
-prompt = ChatPromptTemplate.from_template("""
-You are a support ticket classifier.
-x   
-Classify the ticket into one of:
-- bug
-- feature
-- billing
-
-Only return the category.
-
-Title: {title}
-Description: {description}
-""")
-
 class TicketClassifyRequest(BaseModel):
   id:int
   title:str
