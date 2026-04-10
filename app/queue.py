@@ -4,7 +4,7 @@ from app.connection import get_connection
 logger = logging.getLogger(__name__)
 
 
-def dequeue_pending(job_type: str = "classify") -> list[dict]:
+def dequeue_pending() -> list[dict]:
     """Fetch and lock all pending rows for a given job_type, mark them as processing."""
     conn = get_connection()
     try:
@@ -15,13 +15,12 @@ def dequeue_pending(job_type: str = "classify") -> list[dict]:
                 SET status = 'processing'
                 WHERE id IN (
                     SELECT id FROM llm_retry_queue
-                    WHERE status = 'pending' AND job_type = %s
+                    WHERE status = 'pending' AND job_type in ('classify','priority')
                     ORDER BY created_at
                     FOR UPDATE SKIP LOCKED
                 )
                 RETURNING id, ticket_id, title, description,job_type, retry_count
-                """,
-                (job_type,),
+                """
             )
             rows = cur.fetchall()
         conn.commit()
