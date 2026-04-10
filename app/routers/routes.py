@@ -2,20 +2,21 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from app.connection import get_connection
 import logging
-logger = logging.getLogger(__name__)
-class TicketClassifyRequest(BaseModel):
-  id:int
-  title:str
-  description:str
-    
 
-router = APIRouter(
-    prefix="/portal/ai-engine",
-    tags=["routes"]
-)
+logger = logging.getLogger(__name__)
+
+
+class TicketClassifyRequest(BaseModel):
+    id: int
+    title: str
+    description: str
+
+
+router = APIRouter(prefix="/portal/ai-engine", tags=["routes"])
+
 
 @router.post("/ticket-classify", status_code=200)
-async def classify_ticket(ticket: TicketClassifyRequest): 
+async def classify_ticket(ticket: TicketClassifyRequest):
     """
     Classify a ticket into a category using AI MODEL.
 
@@ -36,7 +37,7 @@ async def classify_ticket(ticket: TicketClassifyRequest):
     # ticket    = request.get_json(silent=True) or {}
     # missing = [f for f in ("ticket_id", "tenant_id", "title", "description") if not ticket.get(f)]
     # if missing:
-    #     return {"error": f"Missing required fields: {missing}"} 
+    #     return {"error": f"Missing required fields: {missing}"}
     # title       = ticket["title"]
     # description = ticket["description"]
     # org_id      = ticket["tenant_id"]
@@ -50,17 +51,21 @@ async def classify_ticket(ticket: TicketClassifyRequest):
                 INSERT INTO llm_retry_queue (ticket_id, title, description, status, retry_count, job_type)
                 VALUES (%s, %s, %s, 'pending', 0, 'classify'),(%s, %s, %s, 'pending', 0, 'priority')
                 """,
-                (ticket.id, ticket.title, ticket.description),
+                (
+                    ticket.id,
+                    ticket.title,
+                    ticket.description,
+                    ticket.id,
+                    ticket.title,
+                    ticket.description,
+                ),
             )
         conn.commit()
         logger.info(f"Ticket {ticket.id} added to retry queue.")
     finally:
         conn.close()
 
-    return {
-        "message": "successfull"
-    }
-
+    return {"message": "successfull"}
 
     # query = the ticket content — examples are selected by cosine similarity
     # query   = f"{title}\n{description}"
@@ -81,7 +86,7 @@ async def classify_ticket(ticket: TicketClassifyRequest):
     #     categories=categories,
     #     fewshot=fewshot,
     # )
-    # content = result.content or {}    
+    # content = result.content or {}
     # return {"message": "File uploaded", "filename": "file_location"}
 
 

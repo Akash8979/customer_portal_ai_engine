@@ -58,8 +58,8 @@ async def scheduled_task():
                     logger.info(f"priority={priority_result}")
                     if priority_result is not None:
                         mark_done(row["queue_id"])
-                        logger.info(f"Retry succeeded for ticket {ticket.id}: {result}")
-                        await notify_update(result["id"],{"priority":  priority_result["priority"].upper()})
+                        logger.info(f"Retry succeeded for ticket {ticket.id}: {priority_result}")
+                        await notify_update(priority_result["id"],{"priority":  priority_result["priority"].upper()})
                     else:
                         mark_failed(row["queue_id"], row["retry_count"])
             except Exception as e:
