@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.connection import get_connection
+from app.services.suggest import Suggest
+from app.services.summarize import CommentSummarize
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -31,7 +34,7 @@ async def classify_ticket(ticket: TicketClassifyRequest):
 
     Response (201):
       {
-        "category":         "bug"
+        "category": "bug"
       }
     """
     # ticket    = request.get_json(silent=True) or {}
@@ -88,6 +91,60 @@ async def classify_ticket(ticket: TicketClassifyRequest):
     # )
     # content = result.content or {}
     # return {"message": "File uploaded", "filename": "file_location"}
+
+
+@router.get("/ticket-comment-suggest/{ticket_id}", status_code=200)
+async def suggest_ticket(ticket_id: int):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT title, description, category
+                FROM portal_ticket
+                WHERE id = %s
+                """,
+                (ticket_id,),
+            )
+            row = cur.fetchone()
+    finally:
+        conn.close()
+
+    result = Suggest.run(row[0], row[1])
+    if result is None:
+        return {"error": "Failed to generate suggestion"}
+
+    return json.loads(result)
+
+
+@router.get("/ticket-comment-summary/{ticket_id}", status_code=200)
+async def summarize_ticket_comments(ticket_id: int):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT body
+                FROM portal_ticket_comment
+                WHERE ticket_id = %s
+                ORDER BY created_at ASC
+                """,
+                (ticket_id,),
+            )
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
+        return {"error": "No comments found for this ticket"}
+
+    comments = [row[0] for row in rows]
+
+    result = CommentSummarize.run(comments)
+    if result is None:
+        return {"error": "Failed to generate summary"}
+
+    return json.loads(result)
 
 
 @router.get("/table_create", status_code=200)
