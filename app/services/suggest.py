@@ -1,7 +1,7 @@
 import logging
 from app.services import llm
 from langchain_core.prompts import ChatPromptTemplate
-
+import json
 logger = logging.getLogger(__name__)
 
 
@@ -30,7 +30,9 @@ class Suggest:
                 "title": title,
                 "description": description,
             })
-            return response.content.strip()
+            if not response:
+                return {}
+            return json.loads(response.content.strip())
         except Exception as e:
             logger.error(f"LLM suggestion failed: {e}")
             return None

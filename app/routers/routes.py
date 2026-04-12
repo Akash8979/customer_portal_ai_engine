@@ -111,10 +111,12 @@ async def suggest_ticket(ticket_id: int):
         conn.close()
 
     result = Suggest.run(row[0], row[1])
-    if result is None:
+    if not result:
         return {"error": "Failed to generate suggestion"}
 
-    return json.loads(result)
+    return {"ticket_id":ticket_id ,
+            "suggested_comment":result['suggested_comment']
+        }
 
 
 @router.get("/ticket-comment-summary/{ticket_id}", status_code=200)
@@ -124,10 +126,11 @@ async def summarize_ticket_comments(ticket_id: int):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT body
-                FROM portal_ticket_comment
+                SELECT message
+                FROM portal_comment
                 WHERE ticket_id = %s
                 ORDER BY created_at ASC
+                limit 10
                 """,
                 (ticket_id,),
             )
@@ -141,10 +144,12 @@ async def summarize_ticket_comments(ticket_id: int):
     comments = [row[0] for row in rows]
 
     result = CommentSummarize.run(comments)
-    if result is None:
+    if not result:
         return {"error": "Failed to generate summary"}
 
-    return json.loads(result)
+    return {"ticket_id":ticket_id ,
+            "summary":result['summary']
+        }
 
 
 @router.get("/table_create", status_code=200)
