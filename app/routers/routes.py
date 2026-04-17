@@ -1,8 +1,16 @@
+from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.connection import get_connection
 from app.services.suggest import Suggest
 from app.services.summarize import CommentSummarize
+from app.services.sentiment import SentimentAnalyse
+from app.services.duplicate import DuplicateDetect
+from app.services.account_health import AccountHealth
+from app.services.release_notes import ReleaseNotesDraft
+from app.services.churn_risk import ChurnRisk
+from app.services.outreach import OutreachDraft
+from app.services.agent_run import AgentRun, OnboardingRecovery
 import json
 import logging
 
@@ -13,6 +21,45 @@ class TicketClassifyRequest(BaseModel):
     id: int
     title: str
     description: str
+
+
+class SentimentRequest(BaseModel):
+    comment: str
+
+
+class DuplicateRequest(BaseModel):
+    new_title: str
+    new_description: str
+    existing_tickets: list[dict]
+
+
+class AccountHealthRequest(BaseModel):
+    account_data: dict
+
+
+class ReleaseNotesRequest(BaseModel):
+    version: str
+    features: list[dict]
+    bug_fixes: list[dict]
+
+
+class ChurnRiskRequest(BaseModel):
+    account_data: dict
+
+
+class OutreachRequest(BaseModel):
+    account_data: dict
+    purpose: str
+
+
+class AgentRunRequest(BaseModel):
+    user_prompt: str
+    context_data: dict = {}
+
+
+class OnboardingRecoveryRequest(BaseModel):
+    onboarding_data: dict
+    days_behind: int
 
 
 router = APIRouter(prefix="/portal/ai-engine", tags=["routes"])
@@ -150,6 +197,78 @@ async def summarize_ticket_comments(ticket_id: int):
     return {"ticket_id":ticket_id ,
             "summary":result['summary']
         }
+
+
+@router.post("/ticket-sentiment", status_code=200)
+async def analyse_sentiment(req: SentimentRequest):
+    """Analyse sentiment of a client comment."""
+    result = SentimentAnalyse.run(req.comment)
+    if not result:
+        return {"error": "Sentiment analysis failed"}
+    return result
+
+
+@router.post("/ticket-duplicate-check", status_code=200)
+async def check_duplicate(req: DuplicateRequest):
+    """Detect if a new ticket is a duplicate of existing ones."""
+    result = DuplicateDetect.run(req.new_title, req.new_description, req.existing_tickets)
+    if not result:
+        return {"error": "Duplicate detection failed"}
+    return result
+
+
+@router.post("/account-health", status_code=200)
+async def account_health(req: AccountHealthRequest):
+    """Generate AI health score for a client account."""
+    result = AccountHealth.run(req.account_data)
+    if not result:
+        return {"error": "Account health analysis failed"}
+    return result
+
+
+@router.post("/draft-release-notes", status_code=200)
+async def draft_release_notes(req: ReleaseNotesRequest):
+    """Draft release notes from a list of features and bug fixes."""
+    result = ReleaseNotesDraft.run(req.version, req.features, req.bug_fixes)
+    if not result:
+        return {"error": "Release notes draft failed"}
+    return result
+
+
+@router.post("/churn-risk", status_code=200)
+async def churn_risk(req: ChurnRiskRequest):
+    """Assess churn risk for a client account."""
+    result = ChurnRisk.run(req.account_data)
+    if not result:
+        return {"error": "Churn risk assessment failed"}
+    return result
+
+
+@router.post("/draft-outreach", status_code=200)
+async def draft_outreach(req: OutreachRequest):
+    """Draft a client outreach email."""
+    result = OutreachDraft.run(req.account_data, req.purpose)
+    if not result:
+        return {"error": "Outreach draft failed"}
+    return result
+
+
+@router.post("/agent-run", status_code=200)
+async def agent_run(req: AgentRunRequest):
+    """Run a free-prompt AI agent action."""
+    result = AgentRun.run(req.user_prompt, req.context_data)
+    if not result:
+        return {"error": "Agent run failed"}
+    return result
+
+
+@router.post("/onboarding-recovery-plan", status_code=200)
+async def onboarding_recovery(req: OnboardingRecoveryRequest):
+    """Generate an onboarding recovery plan for an at-risk client."""
+    result = OnboardingRecovery.run(req.onboarding_data, req.days_behind)
+    if not result:
+        return {"error": "Recovery plan generation failed"}
+    return result
 
 
 @router.get("/table_create", status_code=200)
