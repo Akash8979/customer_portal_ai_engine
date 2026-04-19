@@ -1,6 +1,6 @@
 from typing import Optional
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from app.connection import get_connection
 from app.services.suggest import Suggest
 from app.services.summarize import CommentSummarize
@@ -11,6 +11,10 @@ from app.services.release_notes import ReleaseNotesDraft
 from app.services.churn_risk import ChurnRisk
 from app.services.outreach import OutreachDraft
 from app.services.agent_run import AgentRun, OnboardingRecovery
+from app.services.personal_agent import agent as personal_agent
+from app.services.personal_agent import memory as agent_memory
+from app.services.personal_agent.setup import create_agent_tables
+from app.services.personal_agent.memory import new_session_id
 import json
 import logging
 
@@ -292,3 +296,78 @@ async def table_create():
         return {"message": "Table created successfully"}
     finally:
         conn.close()
+
+
+# ── Personal Agent ────────────────────────────────────────────────────────────
+
+class PersonalAgentChatRequest(BaseModel):
+    user_id: str = Field(..., description="Unique user identifier (email or DB id)")
+    role: str = Field(..., description="User role: CLIENT_ADMIN, CLIENT_USER, AGENT, LEAD, ADMIN")
+    tenant_id: Optional[str] = Field(None, description="Tenant ID for access scoping")
+    message: str = Field(..., description="The user's message to the agent")
+    session_id: Optional[str] = Field(None, description="Resume an existing session; omit to start new")
+
+
+class MemoryUpdateRequest(BaseModel):
+    key: str
+    value: str
+    importance: int = Field(5, ge=1, le=10)
+
+
+@router.post("/personal-agent/setup", status_code=200)
+async def personal_agent_setup():
+    """Create DB tables required by the personal agent (run once)."""
+    try:
+        create_agent_tables()
+        return {"message": "Agent tables created successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/personal-agent/chat", status_code=200)
+async def personal_agent_chat(req: PersonalAgentChatRequest):
+    """
+    Send a message to the user's persistent personal AI agent.
+
+    The agent:
+    - Loads long-term memory (user preferences, past context) into its system prompt
+    - Loads conversation history for the given session_id
+    - Uses tool calls to save/update/forget memories during the turn
+    - Returns the response and the session_id (for follow-up turns)
+    """
+    session = req.session_id or new_session_id()
+    try:
+        result = personal_agent.run_agent(
+            user_id=req.user_id,
+            role=req.role,
+            tenant_id=req.tenant_id,
+            message=req.message,
+            session_id=session,
+        )
+        return {"data": result}
+    except Exception as e:
+        logger.error(f"Personal agent chat failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/personal-agent/memory/{user_id}", status_code=200)
+async def get_agent_memory(user_id: str):
+    """List all long-term memories stored for a user."""
+    memories = agent_memory.get_all_memories(user_id)
+    return {"data": memories, "total": len(memories)}
+
+
+@router.delete("/personal-agent/memory/{user_id}/{key}", status_code=200)
+async def delete_agent_memory(user_id: str, key: str):
+    """Remove a specific long-term memory entry for a user."""
+    removed = agent_memory.delete_memory(user_id, key)
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"Memory key '{key}' not found for user.")
+    return {"message": f"Memory '{key}' removed."}
+
+
+@router.put("/personal-agent/memory/{user_id}", status_code=200)
+async def upsert_agent_memory(user_id: str, req: MemoryUpdateRequest):
+    """Manually add or update a long-term memory entry for a user."""
+    agent_memory.upsert_memory(user_id, req.key, req.value, req.importance)
+    return {"message": f"Memory '{req.key}' saved."}
