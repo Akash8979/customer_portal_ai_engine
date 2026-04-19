@@ -8,7 +8,7 @@ def _pg_url_to_psycopg2(url: str) -> str:
         return url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url
 
-_DATABASE_URL = os.getenv("DATABASE_URL", "")
+_DATABASE_URL = os.getenv("DNS_TYPE_CONNECTION_STRING", "")
 
 if _DATABASE_URL:
     CONNECTION_STRING = _pg_url_to_psycopg2(_DATABASE_URL)
