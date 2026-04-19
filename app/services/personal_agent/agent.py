@@ -11,16 +11,12 @@ Memory update policy:
   - Never store passwords, tokens, or PII beyond what the user explicitly shares
   - Deduplicate by key; assign importance 1-10 (10 = most important)
 """
-import json
 import logging
 from typing import Optional
-
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
-
 from app.services.llm import _get_llm
 from app.services.personal_agent import memory as mem
-
 logger = logging.getLogger(__name__)
 
 # ── Role → permissions map (mirrors customer_portal/accounts/constant.py) ────
@@ -47,7 +43,7 @@ def _build_memory_tools(user_id: str):
         """
         Save or update a fact in long-term memory.
         Use for preferences, recurring issues, key decisions, user style, context clues.
-        importance: 1 (trivial) – 10 (critical). Default 5.
+        importance: 1 (trivial) 10 (critical). Default 5.
         key must be short and descriptive, e.g. 'preferred_language', 'ticket_escalation_style'.
         """
         if not key or not value:
@@ -91,34 +87,34 @@ def _build_system_prompt(user_id: str, role: str, tenant_id: Optional[str]) -> s
         memory_block = "\n\nLONG-TERM MEMORY (what you know about this user):\n" + "\n".join(lines)
 
     return f"""\
-You are a persistent personal AI assistant for this user. You remember them across every session \
-and adapt to their preferences over time.
+            You are a persistent personal AI assistant for this user. You remember them across every session \
+            and adapt to their preferences over time.
 
-USER PROFILE:
-  - user_id   : {user_id}
-  - role      : {role}
-  - tenant_id : {tenant_id or 'N/A'}
-  - permissions: {', '.join(perms) or 'none'}
+            USER PROFILE:
+            - user_id   : {user_id}
+            - role      : {role}
+            - tenant_id : {tenant_id or 'N/A'}
+            - permissions: {', '.join(perms) or 'none'}
 
-ROLE & ACCESS RULES:
-  - Only help the user with actions their role permits (see permissions above).
-  - If a request requires a permission they do not have, politely explain the restriction.
-  - Never reveal other users' data, internal notes restricted to higher roles, or system secrets.
-{memory_block}
+            ROLE & ACCESS RULES:
+            - Only help the user with actions their role permits (see permissions above).
+            - If a request requires a permission they do not have, politely explain the restriction.
+            - Never reveal other users' data, internal notes restricted to higher roles, or system secrets.
+            {memory_block}
 
-MEMORY UPDATE POLICY:
-  - After every turn, use save_memory for any reusable facts you learned (preferences, patterns, \
-    decisions). Importance 7+ for critical facts, 4-6 for useful context, 1-3 for minor details.
-  - Avoid storing sensitive data (passwords, tokens).
-  - Use forget_memory to remove outdated facts.
-  - Use search_memory to recall relevant context before answering complex questions.
+            MEMORY UPDATE POLICY:
+            - After every turn, use save_memory for any reusable facts you learned (preferences, patterns, \
+                decisions). Importance 7+ for critical facts, 4-6 for useful context, 1-3 for minor details.
+            - Avoid storing sensitive data (passwords, tokens).
+            - Use forget_memory to remove outdated facts.
+            - Use search_memory to recall relevant context before answering complex questions.
 
-RELIABILITY RULES:
-  - If you are not sure about something, say so clearly and ask a clarifying question.
-  - Never fabricate ticket IDs, user names, or system data.
-  - Treat every session as a continuation of an ongoing relationship.
+            RELIABILITY RULES:
+            - If you are not sure about something, say so clearly and ask a clarifying question.
+            - Never fabricate ticket IDs, user names, or system data.
+            - Treat every session as a continuation of an ongoing relationship.
 
-OUTPUT: Be concise, structured, and directly useful. Use bullet points for lists."""
+            OUTPUT: Be concise, structured, and directly useful. Use bullet points for lists."""
 
 
 # ── Main agent entry point ────────────────────────────────────────────────────
