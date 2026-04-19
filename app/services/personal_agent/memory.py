@@ -5,16 +5,10 @@
 - Long-term   : stored in agent_long_term_memory table (key/value + importance)
 - System      : user role, permissions, tenant — injected into system prompt
 """
-import json
 import logging
 import uuid
-from datetime import datetime
-from typing import Optional
-
 from app.connection import get_connection
-
 logger = logging.getLogger(__name__)
-
 
 # ── Long-term memory ─────────────────────────────────────────────────────────
 

@@ -15,9 +15,7 @@ from app.services.personal_agent import agent as personal_agent
 from app.services.personal_agent import memory as agent_memory
 from app.services.personal_agent.setup import create_agent_tables
 from app.services.personal_agent.memory import new_session_id
-import json
 import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -314,7 +312,7 @@ class MemoryUpdateRequest(BaseModel):
     importance: int = Field(5, ge=1, le=10)
 
 
-@router.post("/personal-agent/setup", status_code=200)
+@router.get("/personal-agent/setup", status_code=200)
 async def personal_agent_setup():
     """Create DB tables required by the personal agent (run once)."""
     try:
