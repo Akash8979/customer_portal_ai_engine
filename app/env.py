@@ -3,12 +3,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def _pg_url_to_psycopg2(url: str) -> str:
-    if url and url.startswith("postgresql://"):
-        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
-    return url
-
-_DATABASE_URL = os.getenv("DATABASE_URL", "")
 DNS_TYPE_CONNECTION_STRING = os.getenv("DNS_TYPE_CONNECTION_STRING", "")
 if _DATABASE_URL:
     CONNECTION_STRING = _pg_url_to_psycopg2(_DATABASE_URL)
