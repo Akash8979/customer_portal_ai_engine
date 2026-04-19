@@ -8,11 +8,10 @@ def _pg_url_to_psycopg2(url: str) -> str:
         return url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url
 
-_DATABASE_URL = os.getenv("DNS_TYPE_CONNECTION_STRING", "")
-
+_DATABASE_URL = os.getenv("DATABASE_URL", "")
+DNS_TYPE_CONNECTION_STRING = os.getenv("DNS_TYPE_CONNECTION_STRING", "")
 if _DATABASE_URL:
     CONNECTION_STRING = _pg_url_to_psycopg2(_DATABASE_URL)
-    DNS_TYPE_CONNECTION_STRING = _DATABASE_URL
 else:
     _db_user = os.getenv("DB_USER", "akash.kumar")
     _db_password = os.getenv("DB_PASSWORD", "India%40123")
@@ -20,7 +19,7 @@ else:
     _db_port = os.getenv("DB_PORT", "5432")
     _db_name = os.getenv("DB_NAME", "customer_portal")
     CONNECTION_STRING = f"postgresql+psycopg2://{_db_user}:{_db_password}@{_db_host}:{_db_port}/{_db_name}"
-    DNS_TYPE_CONNECTION_STRING = f"postgresql://{_db_user}:{_db_password}@{_db_host}:{_db_port}/{_db_name}"
+    
 
 MODEL = os.getenv("AI_MODEL", "openai/gpt-oss-120b:free")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "bge-m3")
